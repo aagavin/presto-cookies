@@ -1,11 +1,11 @@
-import { Page, Browser,Cookie } from "puppeteer";
+import { Page, Browser, Cookie } from "puppeteer";
 import puppeteerLambda = require('puppeteer-lambda');
 
 const URL: string = "https://www.prestocard.ca/en/";
 const SIGN_IN_LINK_SELECTOR: string = "body > header > div.header.container > div.main-navigation > ul.nav.navbar-nav.navbar-right > li.modalLogin > a";
 
 
-exports.handler = async (event): Promise<Array<object>> => {
+exports.handler = async (event): Promise<Array<Cookie>> => {
 
     console.log('opening browser');
     const browser: Browser = await puppeteerLambda.getBrowser({
@@ -37,7 +37,7 @@ exports.handler = async (event): Promise<Array<object>> => {
         page.click('#btnsubmit')
     ]);
 
-    const cookies:Array<Cookie> = await page.cookies();
+    const cookies: Array<Cookie> = await page.cookies();
 
     await page.close();
     await browser.close();
