@@ -8,7 +8,7 @@
     "clean": "rm -R -f build",
     "build": "export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true && npm install --production && npm install typescript && tsc && npm uninstall typescript",
     "package": "npm run build && zip -r lambda.zip node_modules && zip -ju lambda.zip build/*.js",
-    "deploy": "npm run package",
+    "deploy": "aws lambda update-function-code --function-name presto-cookies --zip-file fileb://lambda.zip",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "aagavin",

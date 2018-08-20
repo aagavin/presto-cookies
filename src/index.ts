@@ -10,16 +10,23 @@ exports.handler = async (event): Promise<Array<Cookie>> => {
     console.log('opening browser');
     const browser: Browser = await puppeteerLambda.getBrowser({
         headless: true,
-        // args: ['--no-sandbox'],
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--single-process', '--disable-dev-shm-usage'],
+
     });
 
     console.log('opening page');
     const page: Page = await browser.newPage();
     await page.setViewport({ 'width': 1920, 'height': 1080 });
-    await page.goto(URL);
+
+    await Promise.all([
+        page.waitForNavigation(),
+        await page.goto(URL)
+    ]);
     await page.click(SIGN_IN_LINK_SELECTOR);
+
     await page.waitFor(300);
     await page.click('#SignIn_Username');
+
     await Promise.all([
         await page.waitFor(50),
         await page.type('#SignIn_Username', event.username)
