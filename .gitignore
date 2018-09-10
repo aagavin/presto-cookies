@@ -43,5 +43,8 @@ typings/
 # Output of 'package'
 *.zip
 
+# chome bin 
+headless-chromium
+
 # dotenv environment variables file
 .env
