@@ -54,7 +54,7 @@ exports.handler = async (event): Promise<Array<Cookie>> => {
         page.click('#btnsubmit')
     ]);
 
-    [err, cookies]= await to(page.cookies());
+    [err, cookies] = await to(page.cookies());
     if (err) console.error(err);
 
     console.log('closeing page and browser')
