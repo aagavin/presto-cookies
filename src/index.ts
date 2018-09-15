@@ -14,9 +14,9 @@ const cacheDBDocClient = new DynamoDB.DocumentClient();
 exports.handler = async (event): Promise<{}> => {
 
     if (typeof event.command !== 'undefined' && event.command === 'AddCreds') {
-        return await addCreds(event);
+        return addCreds(event);
     }
-    return await getCookies(event);
+    return getCookies(event);
 }
 
 this.handler({ username: 'lorraineif', password: '56wYM4Bies', command: 'AddCreds' }).then(console.log).catch(console.log);
