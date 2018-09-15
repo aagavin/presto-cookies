@@ -1,22 +1,42 @@
 import { Page, Browser, Cookie, launch } from "puppeteer";
-import { config as AWSConfig, DynamoDB } from "aws-sdk";
+import { config as AWSConfig, DynamoDB, AWSError, Request } from "aws-sdk";
 
-
+import to from "./util/to";
 
 const URL: string = "https://www.prestocard.ca/en/";
 const SIGN_IN_LINK_SELECTOR: string = "body > header > div.header.container > div.main-navigation > ul.nav.navbar-nav.navbar-right > li.modalLogin > a";
 const TABLE_NAME = "prestoCache";
 
 AWSConfig.update({ region: 'us-east-1' });
-const cacheDB = new DynamoDB();
+const cacheDBDocClient = new DynamoDB.DocumentClient();
 
-const to = (promise) => {
-    return promise.then(data => {
-        return [null, data];
-    }).catch(err => [err]);
+
+exports.handler = async (event): Promise<{}> => {
+
+    if (typeof event.command !== 'undefined' && event.command === 'AddCreds') {
+        return await addCreds(event);
+    }
+    return await getCookies(event);
 }
 
-exports.handler = async (event): Promise<Array<Cookie>> => {
+this.handler({ username: 'lorraineif', password: '56wYM4Bies', command: 'AddCreds' }).then(console.log).catch(console.log);
+
+const addCreds = async (event: any) => {
+    const params: DynamoDB.DocumentClient.PutItemInput = {
+        TableName: TABLE_NAME,
+        Item: {
+            username: event.username,
+            cred: Buffer.from(event.password).toString('base64')
+        }
+    };
+    const dbValue: Request<DynamoDB.DocumentClient.PutItemOutput, AWSError> = cacheDBDocClient.put(params, (err: AWSError, data: DynamoDB.DocumentClient.PutItemOutput) => {
+        if (err)
+            console.error(err.message);
+    });
+    return {};
+}
+
+const getCookies = async (event) => {
 
     let browser: Browser, page: Page, cookies: Array<Cookie>, err;
 
@@ -68,18 +88,22 @@ exports.handler = async (event): Promise<Array<Cookie>> => {
     await page.close();
     await browser.close();
 
-    const parmas: DynamoDB.PutItemInput = {
+    const parmas: DynamoDB.DocumentClient.UpdateItemInput = {
         TableName: TABLE_NAME,
-        Item: {
-            username: { S: event.username },
-            cookiesCache: { S: Buffer.from(JSON.stringify(cookies)).toString('base64') }
-        }
+        Key: {
+            'username': event.username
+        },
+        UpdateExpression: 'SET cookiesCache = :c',
+        ExpressionAttributeValues: {
+            ':c': Buffer.from(JSON.stringify(cookies)).toString('base64')
+        },
+        ReturnValues: "UPDATED_NEW",
     };
 
-    cacheDB.putItem(parmas, (err, data) => {
-        if (err) console.error(err);
+    cacheDBDocClient.update(parmas, (err: AWSError, data) => {
+        if (err) console.error(err.message);
     });
 
     console.log('returning cookies')
-    return cookies;
+    return {};
 }
