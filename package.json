@@ -6,8 +6,8 @@
   "scripts": {
     "compile": "tsc",
     "clean": "rm -R -f build && rm -R -f node_modules && rm -f lambda.zip",
-    "build": "npm run clean && export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true && npm install --production && npm install typescript && tsc && npm uninstall typescript",
-    "package": "npm run build && zip -r lambda.zip node_modules && zip -ju lambda.zip build/*.js && zip -ju lambda.zip ./src/headless-chromium",
+    "build": "npm run clean && npm install --production && npm install typescript && tsc && npm uninstall typescript",
+    "package": "npm run build && zip -r lambda.zip node_modules && zip -ju lambda.zip build/*.js",
     "deploy": "aws lambda update-function-code --function-name presto-cookies --zip-file fileb://lambda.zip",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -20,9 +20,7 @@
     "type": "git",
     "url": "https://github.com/aagavin/presto-cookies.git"
   },
-  "dependencies": {
-    "puppeteer-lambda": "^1.0.12"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^10.9.4",
     "@types/puppeteer": "^1.3.2",

@@ -1,8 +1,8 @@
-import { config as AWSConfig, DynamoDB, AWSError } from "aws-sdk";
+import { config as AWSConfig, DynamoDB, AWSError, Lambda } from "aws-sdk";
 import { PromiseResult } from "aws-sdk/lib/request";
 
-import to from "./util/to";
-import setCookies from "./setCookies";
+import to from './util/to';
+// import setCookies from "./setCookies";
 
 const TABLE_NAME = "prestoCache";
 
@@ -22,24 +22,35 @@ const setCookiesLoop = async (): Promise<void> => {
 
     const users: Array<{ username: string, cred: string }> = userResult.$response.data['Items'];
 
-    users.map(user => user.cred = Buffer.from(user.cred, 'base64').toString('ascii'));
+    users.map(user => user['password'] = Buffer.from(user.cred, 'base64').toString('ascii'));
     users.forEach(async user => {
-        const cookies = await setCookies(user);
-        const parmas: DynamoDB.DocumentClient.UpdateItemInput = {
-            TableName: TABLE_NAME,
-            Key: {
-                'username': user.username
-            },
-            UpdateExpression: 'SET cookiesCache = :c',
-            ExpressionAttributeValues: {
-                ':c': Buffer.from(JSON.stringify(cookies)).toString('base64')
-            },
-            ReturnValues: "UPDATED_NEW",
+        const params: Lambda.InvocationRequest = {
+            FunctionName: 'presto-cookies',
+            Payload: JSON.stringify(user)
         };
+        // const cookies = await setCookies(user);
+        const cookies = (new Lambda()).invoke(params, (err, data: Lambda.InvocationResponse) => {
+            if (err) {
+                console.error(err.message);
+                return;
+            }
+            const parmas: DynamoDB.DocumentClient.UpdateItemInput = {
+                TableName: TABLE_NAME,
+                Key: {
+                    'username': user.username
+                },
+                UpdateExpression: 'SET cookiesCache = :c',
+                ExpressionAttributeValues: {
+                    ':c': Buffer.from(JSON.stringify(data.Payload)).toString('base64')
+                },
+                ReturnValues: "UPDATED_NEW",
+            };
 
-        cacheDBDocClient.update(parmas, (err: AWSError, data) => {
-            if (err) console.error(err.message);
+            cacheDBDocClient.update(parmas, (err: AWSError, data) => {
+                if (err) console.error(err.message);
+            });
         });
+
     });
 }
 
@@ -60,7 +71,7 @@ exports.handler = async (event): Promise<object> => {
     let err;
 
     if (typeof event.command !== 'undefined' && event.command === 'AddCreds') return addCreds(event);
-    [err,] = await to(setCookiesLoop());
+    [err] = await to(setCookiesLoop());
     if (err) {
         console.error(err);
         return err;
@@ -68,3 +79,4 @@ exports.handler = async (event): Promise<object> => {
     return { success: true };
 }
 
+this.handler({}).then(console.log).catch(console.log);
