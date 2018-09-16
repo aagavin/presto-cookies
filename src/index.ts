@@ -1,8 +1,11 @@
 import { config as AWSConfig, DynamoDB, AWSError, Lambda } from "aws-sdk";
 import { PromiseResult } from "aws-sdk/lib/request";
 
-import to from './util/to';
-// import setCookies from "./setCookies";
+const to = (promise) => {
+    return promise.then(data => {
+        return [null, data];
+    }).catch(err => [err]);
+}
 
 const TABLE_NAME = "prestoCache";
 
@@ -29,7 +32,7 @@ const setCookiesLoop = async (): Promise<void> => {
             Payload: JSON.stringify(user)
         };
         // const cookies = await setCookies(user);
-        const cookies = (new Lambda()).invoke(params, (err, data: Lambda.InvocationResponse) => {
+        (new Lambda()).invoke(params, (err, data: Lambda.InvocationResponse) => {
             if (err) {
                 console.error(err.message);
                 return;
@@ -39,9 +42,10 @@ const setCookiesLoop = async (): Promise<void> => {
                 Key: {
                     'username': user.username
                 },
-                UpdateExpression: 'SET cookiesCache = :c',
+                UpdateExpression: 'SET cookiesCache = :c, lastUpdate = :d',
                 ExpressionAttributeValues: {
-                    ':c': Buffer.from(JSON.stringify(data.Payload)).toString('base64')
+                    ':c': Buffer.from(JSON.stringify(data.Payload)).toString('base64'),
+                    ':d': new Date().valueOf()
                 },
                 ReturnValues: "UPDATED_NEW",
             };
