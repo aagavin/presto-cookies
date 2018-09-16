@@ -12,7 +12,8 @@ const TABLE_NAME = "prestoCache";
 AWSConfig.update({ region: 'us-east-1' });
 const cacheDBDocClient = new DynamoDB.DocumentClient();
 
-const setCookiesLoop = async (): Promise<void> => {
+const setCookiesLoop = async (callback): Promise<void> => {
+    console.log('setting cookies');
     const params: DynamoDB.DocumentClient.ScanInput = {
         TableName: TABLE_NAME,
         AttributesToGet: ['username', 'cred']
@@ -23,37 +24,45 @@ const setCookiesLoop = async (): Promise<void> => {
         console.error(userResult.$response.error.message);
     }
 
-    const users: Array<{ username: string, cred: string }> = userResult.$response.data['Items'];
+    let users: Array<object> = userResult.$response.data['Items'];
 
-    users.map(user => user['password'] = Buffer.from(user.cred, 'base64').toString('ascii'));
+    users = users.map(user => {
+        user['password'] = Buffer.from(user['cred'], 'base64').toString('ascii')
+        return user;
+    });
+
     users.forEach(async user => {
+
         const params: Lambda.InvocationRequest = {
             FunctionName: 'presto-cookies',
             Payload: JSON.stringify(user)
         };
-        // const cookies = await setCookies(user);
-        (new Lambda()).invoke(params, (err, data: Lambda.InvocationResponse) => {
-            if (err) {
-                console.error(err.message);
-                return;
-            }
+
+        console.log('-----------1------------');
+        (new Lambda()).invoke(params, (err, cookies) => {
+
+            console.log(`-------------${cookies}--------`)
             const parmas: DynamoDB.DocumentClient.UpdateItemInput = {
                 TableName: TABLE_NAME,
                 Key: {
-                    'username': user.username
+                    'username': user['username']
                 },
                 UpdateExpression: 'SET cookiesCache = :c, lastUpdate = :d',
                 ExpressionAttributeValues: {
-                    ':c': Buffer.from(JSON.stringify(data.Payload)).toString('base64'),
+                    ':c': Buffer.from(JSON.stringify(cookies)).toString('base64'),
                     ':d': new Date().valueOf()
                 },
                 ReturnValues: "UPDATED_NEW",
             };
-
+            console.log(JSON.stringify(params));
             cacheDBDocClient.update(parmas, (err: AWSError, data) => {
                 if (err) console.error(err.message);
+                console.log(data);
             });
+            console.log('-----------1.5------------')
+            callback(true);
         });
+        console.log('-----------2------------');
 
     });
 }
@@ -74,13 +83,14 @@ const addCreds = async (event: any) => {
 exports.handler = async (event): Promise<object> => {
     let err;
 
-    if (typeof event.command !== 'undefined' && event.command === 'AddCreds') return addCreds(event);
-    [err] = await to(setCookiesLoop());
+    if (typeof event.command !== 'undefined' && event.command === 'AddCreds') {
+        console.log('added creds');
+        return addCreds(event);
+    }
+    [err] = await to(setCookiesLoop((val: boolean) => val));
     if (err) {
         console.error(err);
         return err;
     }
     return { success: true };
 }
-
-this.handler({}).then(console.log).catch(console.log);
