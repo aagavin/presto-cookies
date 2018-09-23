@@ -6,7 +6,7 @@
   "scripts": {
     "compile": "tsc",
     "clean": "rm -R -f build && rm -R -f node_modules && rm -f lambda.zip",
-    "build": "npm run clean && export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true && npm install --production && npm install typescript && tsc && npm uninstall typescript",
+    "build": "npm run clean && npm run clean && export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true && npm install --production && npm install typescript && tsc && npm uninstall typescript",
     "package": "npm run build && zip -r lambda.zip node_modules && zip -ju lambda.zip build/*.js && zip -ju lambda.zip ./src/headless-chromium",
     "deploy": "aws lambda update-function-code --function-name presto-cookies --zip-file fileb://lambda.zip",
     "test": "echo \"Error: no test specified\" && exit 1"

@@ -16,8 +16,7 @@ exports.handler = async (event): Promise<Array<Cookie>> => {
     console.log('opening browser');
     [err, browser] = await to(launch({
         executablePath: './headless-chromium',
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--single-process', '--deterministic-fetch', "--proxy-server='direct://'", '--proxy-bypass-list=*', '--disk-cache-size=0']
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--single-process', '--deterministic-fetch', "--proxy-server='direct://'", '--proxy-bypass-list=*']
     }));
     if (err) console.error(err);
 
