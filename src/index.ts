@@ -1,20 +1,17 @@
-import { Page, Browser, Cookie, launch } from "puppeteer";
+import { Page, Browser, launch } from "puppeteer";
+import { to } from "./util/to";
+import { getBalance, getOtherCards, getTable } from "./parse/parseHome";
 
 const URL: string = "https://www.prestocard.ca/en/";
 const SIGN_IN_LINK_SELECTOR: string = "body > header > div.header.container > div.main-navigation > ul.nav.navbar-nav.navbar-right > li.modalLogin > a";
 
-const to = (promise) => {
-    return promise.then(data => {
-        return [null, data];
-    }).catch(err => [err]);
-}
+exports.handler = async (event): Promise<{}> => {
 
-exports.handler = async (event): Promise<Array<Cookie>> => {
-
-    let browser: Browser, page: Page, cookies: Array<Cookie>, err;
+    let browser: Browser, page: Page, err;
 
     console.log('opening browser');
     [err, browser] = await to(launch({
+        // headless: false,
         executablePath: './headless-chromium',
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--single-process', '--deterministic-fetch', "--proxy-server='direct://'", '--proxy-bypass-list=*']
     }));
@@ -53,13 +50,20 @@ exports.handler = async (event): Promise<Array<Cookie>> => {
         page.click('#btnsubmit')
     ]);
 
-    [err, cookies] = await to(page.cookies());
-    if (err) console.error(err);
+    const parsedData = await Promise.all([
+        getBalance(page),
+        getTable(page),
+        getOtherCards(page)
+    ]);
 
     console.log('closeing page and browser')
     await page.close();
     await browser.close();
 
-    console.log('returning cookies')
-    return cookies;
+    console.log('returning parsedData')
+    return {
+        cardInfo: parsedData[0],
+        balanceTable: parsedData[1],
+        otherCard: parsedData[2]
+    };
 }
