@@ -21,7 +21,7 @@
     "url": "https://github.com/aagavin/presto-cookies.git"
   },
   "dependencies": {
-    "puppeteer-lambda": "^1.0.12"
+    "puppeteer": "1.6.2"
   },
   "devDependencies": {
     "@types/node": "^10.3.0",
