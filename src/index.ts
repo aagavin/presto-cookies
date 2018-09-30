@@ -25,26 +25,21 @@ exports.handler = async (event): Promise<{}> => {
 
     console.log(`going to ${URL}`);
     await Promise.all([
-        page.waitForNavigation(),
-        await page.goto(URL)
+        page.waitForNavigation({waitUntil: 'networkidle0'}),
+        page.goto(URL)
     ]);
 
     await page.click(SIGN_IN_LINK_SELECTOR);
     await page.waitFor(300);
-    await page.click('#SignIn_Username');
 
-    await Promise.all([
-        await page.waitFor(50),
-        await page.type('#SignIn_Username', event.username)
-    ]);
+    console.log(`username: ${event.username}`);
+    await page.type('#SignIn_Username', event.username);
 
-    await page.click('#SignIn_Password');
+    console.log('typeing password');
+    await page.type('#SignIn_Password', event.password);
 
-    await Promise.all([
-        await page.waitFor(50),
-        page.type('#SignIn_Password', event.password)
-    ]);
-
+    console.log('click submit button');
+    await page.waitFor(50);
     await Promise.all([
         page.waitForNavigation(),
         page.click('#btnsubmit')
@@ -56,11 +51,10 @@ exports.handler = async (event): Promise<{}> => {
         getOtherCards(page)
     ]);
 
-    console.log('closeing page and browser')
-    await page.close();
+    console.log('closeing page and browser');
     await browser.close();
 
-    console.log('returning parsedData')
+    console.log('returning parsedData');
     return {
         cardInfo: parsedData[0],
         balanceTable: parsedData[1],
