@@ -1,5 +1,7 @@
+[![CodeFactor](https://www.codefactor.io/repository/github/aagavin/presto-cookies/badge)](https://www.codefactor.io/repository/github/aagavin/presto-cookies)
+
 # presto-cookies
-gets a list of cookies after signing into prestocard.ca 
+balance data from prestocard.ca 
 
 # Setup 
 
