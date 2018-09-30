@@ -5,7 +5,7 @@ const BALANCE = ".dashboard__card-summary";
 const DROPDOWN = ".header .fareMediaID";
 
 export const getBalance = async (page: Page) => {
-    return await page.evaluate(BALANCE => {
+    return page.evaluate(BALANCE => {
         const balanceDashboard = document.querySelector(BALANCE);
         return {
             name: balanceDashboard.querySelector('h2').innerText,
@@ -16,7 +16,7 @@ export const getBalance = async (page: Page) => {
 }
 
 export const getTable = async (page: Page) => {
-    return await page.evaluate(() => {
+    return page.evaluate(() => {
 
         const table:HTMLTableElement = document.querySelector('#tblTHR');
         const rows = table.rows;
@@ -35,7 +35,7 @@ export const getTable = async (page: Page) => {
 }
 
 export const getOtherCards = async (page: Page) => {
-    return await page.evaluate((DropSelector, OTHER_CARD_SPACE) => {
+    return page.evaluate((DropSelector, OTHER_CARD_SPACE) => {
         const otherCards = document.querySelectorAll(DropSelector);
         let cards = [];
         
