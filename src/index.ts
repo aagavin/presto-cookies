@@ -1,23 +1,9 @@
 import { Page, Browser, launch } from "puppeteer";
 import { to } from "./util/to";
 import { getBalance, getOtherCards, getTable } from "./parse/parseHome";
-import { logError } from "./util/error";
 
 const URL: string = "https://www.prestocard.ca/en/";
 const SIGN_IN_LINK_SELECTOR: string = "body > header > div.header.container > div.main-navigation > ul.nav.navbar-nav.navbar-right > li.modalLogin > a";
-
-const parseSignInError = async (page: Page, browser: Browser) => {
-    const errorResponse = await page.evaluate(() => {
-        const usernameError = document.getElementById('error_SignIn_Username');
-        const passwordError = document.getElementById('error_SignIn_Password');
-        return {
-            usernameError: usernameError ? usernameError.innerText : usernameError,
-            passwordError: passwordError ? passwordError.innerText : passwordError
-        };
-    });
-    await browser.close();
-    return errorResponse;
-}
 
 exports.handler = async (event): Promise<{}> => {
 
@@ -27,7 +13,7 @@ exports.handler = async (event): Promise<{}> => {
     [err, browser] = await to(launch({
         // headless: false,
         executablePath: './headless-chromium',
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--single-process', '--deterministic-fetch', "--proxy-server='direct://'", '--proxy-bypass-list=*']
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--single-process', "--proxy-server='direct://'", '--proxy-bypass-list=*']
     }));
     if (err) console.error('error with browser', err);
 
@@ -58,11 +44,14 @@ exports.handler = async (event): Promise<{}> => {
     console.log('click submit button');
     await page.waitFor(50);
     [err,] = await to(Promise.all([
-        page.waitForNavigation({ timeout: 15 }),
+        page.waitForNavigation(),
         page.click('#btnsubmit')
     ]));
-
-    if (err) return await parseSignInError(page, browser);
+    if (err) {
+        console.error(err);
+        await browser.close();
+        return { error: 'username or password wrong' }
+    };
 
     const parsedData = await Promise.all([
         getBalance(page),
@@ -80,4 +69,3 @@ exports.handler = async (event): Promise<{}> => {
         otherCard: parsedData[2]
     };
 }
-
