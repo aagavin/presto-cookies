@@ -2,9 +2,11 @@ import { Page, Browser, launch } from "puppeteer";
 import { to } from "./util/to";
 import { getBalance, getOtherCards, getTable } from "./parse/parseHome";
 import { addToCache, getCache } from "./util/cache";
+import { getLaunchConfig } from "./util/launchConfig";
 
 const URL: string = "https://www.prestocard.ca/en/";
 const SIGN_IN_LINK_SELECTOR: string = "body > header > div.header.container > div.main-navigation > ul.nav.navbar-nav.navbar-right > li.modalLogin > a";
+
 
 exports.handler = async (event): Promise<{}> => {
 
@@ -16,11 +18,7 @@ exports.handler = async (event): Promise<{}> => {
     let browser: Browser, page: Page, err;
 
     console.log('opening browser');
-    [err, browser] = await to(launch({
-        // headless: false,
-        executablePath: './headless-chromium',
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--single-process', "--proxy-server='direct://'", '--proxy-bypass-list=*']
-    }));
+    [err, browser] = await to(launch(getLaunchConfig()));
     if (err) console.error('error with browser', err);
 
     console.log('opening page');
@@ -77,3 +75,5 @@ exports.handler = async (event): Promise<{}> => {
     await addToCache(event.username, cardData);
     return cardData;
 }
+
+this.handler({username: 'Maveinaf', password: 'isabella14'}).then(console.log).catch(console.log);
