@@ -44,7 +44,7 @@ export const addToCache = async (username: string, cardData: object): Promise<ob
 };
 
 /**
- * get cached 
+ * get cached value
  *
  * @param {string} username
  * @returns {Promise<object>}
@@ -62,7 +62,7 @@ export const getCache = async (username: string): Promise<object> => {
     const cacheValue: GetItemOutput = await dynamodb.getItem(params).promise();
 
     const nowDate = Math.floor(Date.now() / 1000);
-    if (Object.keys(cacheValue).length === 0 || nowDate > parseInt(cacheValue.Item.expireTime.S)) {
+    if (Object.keys(cacheValue).length === 0 || nowDate > parseInt(cacheValue.Item.expireTime.S, 10)) {
         return null;
     }
 
