@@ -1,12 +1,18 @@
 import { Page, Browser, launch } from "puppeteer";
 import { to } from "./util/to";
 import { getBalance, getOtherCards, getTable } from "./parse/parseHome";
+import { addToCache, getCache } from "./util/cache";
 
 const URL: string = "https://www.prestocard.ca/en/";
 const SIGN_IN_LINK_SELECTOR: string = "body > header > div.header.container > div.main-navigation > ul.nav.navbar-nav.navbar-right > li.modalLogin > a";
 
 exports.handler = async (event): Promise<{}> => {
 
+    const cacheValue = await getCache(event.username);
+    if (cacheValue !== null) {
+        console.info('using cache value');
+        return cacheValue;
+    }
     let browser: Browser, page: Page, err;
 
     console.log('opening browser');
@@ -43,7 +49,7 @@ exports.handler = async (event): Promise<{}> => {
 
     console.log('click submit button');
     await page.waitFor(50);
-    [err,] = await to(Promise.all([
+    [err] = await to(Promise.all([
         page.waitForNavigation(),
         page.click('#btnsubmit')
     ]));
@@ -63,9 +69,11 @@ exports.handler = async (event): Promise<{}> => {
     await browser.close();
 
     console.log('returning parsedData');
-    return {
+    const cardData = {
         cardInfo: parsedData[0],
         balanceTable: parsedData[1],
         otherCard: parsedData[2]
     };
+    await addToCache(event.username, cardData);
+    return cardData;
 }

@@ -19,6 +19,7 @@ const dynamodb = new AWS.DynamoDB();
  */
 export const addToCache = async (username: string, cardData: object): Promise<object> => {
     // 3600000
+    // 3600
     let result, err;
 
     const encodedCardData = Buffer.from(JSON.stringify(cardData)).toString('base64');
@@ -31,7 +32,7 @@ export const addToCache = async (username: string, cardData: object): Promise<ob
                 S: encodedCardData
             },
             'expireTime': {
-                S: (Math.floor(Date.now() / 1000) + 30).toString()
+                S: (Math.floor(Date.now() / 1000) + 3600).toString()
             }
         },
         TableName: TABLENAME
@@ -48,7 +49,7 @@ export const addToCache = async (username: string, cardData: object): Promise<ob
  * @param {string} username
  * @returns {Promise<object>}
  */
-const getCache = async (username: string): Promise<object> => {
+export const getCache = async (username: string): Promise<object> => {
 
     const params: GetItemInput = {
         Key: {
@@ -61,21 +62,11 @@ const getCache = async (username: string): Promise<object> => {
     const cacheValue: GetItemOutput = await dynamodb.getItem(params).promise();
 
     const nowDate = Math.floor(Date.now() / 1000);
-    const expTime = parseInt(cacheValue.Item.expireTime.S);
-
-    if (nowDate > expTime) {
+    if (Object.keys(cacheValue).length === 0 || nowDate > parseInt(cacheValue.Item.expireTime.S)) {
         return null;
     }
 
     const jsonValue = Buffer.from(cacheValue.Item.cardData.S, 'base64').toString();
     return JSON.parse(jsonValue);
 
-}
-
-export const checkCache = async (username: string): Promise<object> => {
-    const cacheValue = await getCache(username);
-    if (cacheValue !== null) {
-        console.info('using cache value');
-        return cacheValue;
-    }
 }
